@@ -761,22 +761,19 @@ final public class AnimationView: LottieView {
       case .stop:
         removeCurrentAnimation()
         updateAnimationFrame(currentContext.playFrom)
-        if waitingToPlayAimation {
-            currentContext.closure.completionBlock?(true)
-        }
       case .pause:
         removeCurrentAnimation()
       case .pauseAndRestore:
-        currentContext.closure.ignoreDelegate = true
+        currentContext.closure.ignoreDelegate = !waitingToPlayAimation
         removeCurrentAnimation()
         /// Keep the stale context around for when the app enters the foreground.
         self.animationContext = currentContext
       case .forceFinish:
         removeCurrentAnimation()
         updateAnimationFrame(currentContext.playTo)
-        if waitingToPlayAimation {
-            currentContext.closure.completionBlock?(true)
-        }
+      }
+      if waitingToPlayAimation, backgroundBehavior != .pauseAndRestore {
+        currentContext.closure.completionBlock?(true)
       }
     }
   }
@@ -786,9 +783,6 @@ final public class AnimationView: LottieView {
     if let currentContext = animationContext {
       if waitingToPlayAimation {
         waitingToPlayAimation = false
-        if backgroundBehavior == .pauseAndRestore  {
-            currentContext.closure.ignoreDelegate = false
-        }
         self.addNewAnimationForContext(currentContext)
       } else if backgroundBehavior == .pauseAndRestore {
         /// Restore animation from saved state
